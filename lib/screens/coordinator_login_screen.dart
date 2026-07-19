@@ -8,8 +8,12 @@ class CoordinatorLoginScreen extends StatefulWidget {
 }
 
 class _CoordinatorLoginScreenState extends State<CoordinatorLoginScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  // Placeholder test credentials — remove once real auth is connected
+  static const String _testEmail = 'coordinator@slu.com';
+  static const String _testPassword = 'coordinator123';
+
+  final _emailController = TextEditingController(text: _testEmail);
+  final _passwordController = TextEditingController(text: _testPassword);
   bool _obscurePassword = true;
 
   @override
@@ -30,8 +34,18 @@ class _CoordinatorLoginScreenState extends State<CoordinatorLoginScreen> {
       return;
     }
 
-    // TODO: connect to backend authentication
-    debugPrint('Coordinator login attempt: $email');
+    // TODO: replace with real backend authentication
+    if (email == _testEmail && password == _testPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login successful (placeholder)')),
+      );
+      // TODO: Navigator.pushReplacement to CoordinatorDashboardScreen once built
+      debugPrint('Coordinator login success: $email');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid credentials. Use the pre-filled test login.')),
+      );
+    }
   }
 
   @override
@@ -52,6 +66,12 @@ class _CoordinatorLoginScreenState extends State<CoordinatorLoginScreen> {
                     'Coordinator Login',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Test credentials pre-filled for development',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 32),
                   TextField(
