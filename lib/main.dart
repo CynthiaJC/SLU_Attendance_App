@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
-import 'screens/role_selection_screen.dart';
+import 'screens/login_screen.dart'; // Directly targets the new file you renamed
 
 void main() {
-  runApp(const SLUAttendanceApp());
+  runApp(const MyApp());
 }
 
-class SLUAttendanceApp extends StatelessWidget {
-  const SLUAttendanceApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SLU Attendance App',
+      title: 'Global Intern Tracker',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: const RoleSelectionScreen(),
+      home: const LoginScreen(), // Directly loads your new unified login screen
     );
   }
 }
