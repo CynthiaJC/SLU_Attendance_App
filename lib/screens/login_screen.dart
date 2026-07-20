@@ -10,8 +10,15 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+
+  // Placeholder test credentials — remove once real auth is connected
+  static const String _internTestEmail = 'intern@slu.com';
+  static const String _internTestPassword = 'intern123';
+  static const String _coordinatorTestEmail = 'coordinator@slu.com';
+  static const String _coordinatorTestPassword = 'coordinator123';
+
+  final _emailController = TextEditingController(text: _internTestEmail);
+  final _passwordController = TextEditingController(text: _internTestPassword);
   
   int _selectedRoleIndex = 0; // 0 = Intern, 1 = Coordinator
   bool _isPasswordObscured = true;
