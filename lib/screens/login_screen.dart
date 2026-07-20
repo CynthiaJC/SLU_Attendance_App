@@ -26,12 +26,55 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      final role = _selectedRoleIndex == 0 ? 'Intern' : 'Coordinator';
-      // TODO: Integrate authentication backend
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Logging in as $role...')),
-      );
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      final isIntern = _selectedRoleIndex == 0;
+
+      // Define our placeholder credentials
+      const internEmail = 'intern@team.com';
+      const internPassword = 'password123';
+
+      const coordinatorEmail = 'coordinator@team.com';
+      const coordinatorPassword = 'admin123';
+
+      if (isIntern) {
+        // Check Intern Credentials
+        if (email == internEmail && password == internPassword) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login Successful! Welcome Intern.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // TODO: Navigate to Intern Dashboard screen here
+        } else {
+          _showErrorSnackBar('Invalid Intern credentials! Try intern@team.com / password123');
+        }
+      } else {
+        // Check Coordinator Credentials
+        if (email == coordinatorEmail && password == coordinatorPassword) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login Successful! Welcome Coordinator.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // TODO: Navigate to Coordinator Dashboard screen here
+        } else {
+          _showErrorSnackBar('Invalid Coordinator credentials! Try coordinator@team.com / admin123');
+        }
+      }
     }
+  }
+
+  // Helper method to keep things clean
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   @override
