@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'coordinator_dashboard.dart';
-import 'intern_profile_screen.dart';
+import 'coordinator_main_screen.dart';
+import 'intern_main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,12 +46,12 @@ class _LoginScreenState extends State<LoginScreen> {
         if (_selectedRoleIndex == 1) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const CoordinatorDashboard()),
+            MaterialPageRoute(builder: (context) => const CoordinatorMainScreen()),
           );
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const InternProfileScreen()),
+            MaterialPageRoute(builder: (context) => const InternMainScreen()),
           );
         }
       } else {
