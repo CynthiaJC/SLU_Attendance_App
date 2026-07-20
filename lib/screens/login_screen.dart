@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'intern_dashboard.dart'; // Make sure to import your InternDashboard file here
 import 'coordinator_main_screen.dart';
 import 'intern_main_screen.dart';
 
@@ -12,6 +13,9 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  
 
   // Placeholder test credentials — remove once real auth is connected
   static const String _testEmail = 'user@slu.com';
@@ -33,8 +37,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      final role = _selectedRoleIndex == 0 ? 'Intern' : 'Coordinator';
       final email = _emailController.text.trim();
+
+      // Check for valid credential (user@slu.com with any password)
+      if (email == 'user@slu.com') {
+        // Navigate to InternDashboard and replace current route
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const InternDashboard(),
+          ),
       final password = _passwordController.text.trim();
 
       // TODO: replace with real backend authentication
@@ -55,8 +67,12 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } else {
+        // Show error snackbar for invalid credentials
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid credentials. Use the pre-filled test login.')),
+          const SnackBar(
+            content: Text('Invalid credentials. Use user@slu.com to login.'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -64,6 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Dynamically adjust accent color based on user role context
     final themeColor = _selectedRoleIndex == 0 ? Colors.indigo : Colors.teal;
 
     return Scaffold(
@@ -76,6 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 40),
+                // App Branding Area
                 Icon(Icons.g_translate_outlined, size: 64, color: themeColor),
                 const SizedBox(height: 16),
                 Text(
@@ -93,6 +111,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(height: 40),
+
+                // 1. Role Selection Mechanism
                 CupertinoSlidingSegmentedControl<int>(
                   groupValue: _selectedRoleIndex,
                   backgroundColor: Colors.grey.shade200,
@@ -126,6 +146,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 32),
+
+                // Email Input Field
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -145,6 +167,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 20),
+
+                // Password Input Field with Visibility Toggle
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _isPasswordObscured,
@@ -170,6 +194,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
+
+                // Remember Me & Forgot Password Layout row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -184,12 +210,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     TextButton(
+                      onPressed: () {
+                        // Handle Forgot Password routing contextually
+                      },
                       onPressed: () {},
                       child: Text('Forgot Password?', style: TextStyle(color: themeColor)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
+
+                // Primary Action Button
                 ElevatedButton(
                   onPressed: _handleLogin,
                   style: ElevatedButton.styleFrom(
@@ -205,6 +236,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
+
+                // Divider line for social providers
                 const Row(
                   children: [
                     Expanded(child: Divider()),
@@ -216,6 +249,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
+
+                // OAuth Options (Google & LinkedIn)
                 Row(
                   children: [
                     Expanded(
@@ -244,6 +279,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 const SizedBox(height: 40),
+
+                // Language Selector Simulation at Footer
                 TextButton.icon(
                   onPressed: () {},
                   icon: const Icon(Icons.language, size: 20, color: Colors.grey),
@@ -256,4 +293,5 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
 }
