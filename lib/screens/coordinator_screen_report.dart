@@ -228,7 +228,6 @@ class _CoordinatorScreenReportState extends State<CoordinatorScreenReport>
       backgroundColor: _surfaceColor,
       appBar: _buildAppBar(),
       body: _buildBody(),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -622,45 +621,6 @@ class _CoordinatorScreenReportState extends State<CoordinatorScreenReport>
     );
   }
 
-  // ── Bottom nav ────────────────────────────────────────────────────────────
-
-  Widget _buildBottomNav() {
-    return NavigationBar(
-      backgroundColor: _surfaceContainerLowest,
-      surfaceTintColor: Colors.transparent,
-      elevation: 4,
-      selectedIndex: _bottomNavIndex,
-      onDestinationSelected: (i) {
-        setState(() => _bottomNavIndex = i);
-        if (i == 2) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CoordinatorProfileScreen(),
-            ),
-          );
-        }
-      },
-      indicatorColor: _surfaceContainerHigh,
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.dashboard_outlined),
-          selectedIcon: Icon(Icons.dashboard, color: _primaryColor),
-          label: 'Dashboard',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.assessment_outlined),
-          selectedIcon: Icon(Icons.assessment, color: _primaryColor),
-          label: 'Reports',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person, color: _primaryColor),
-          label: 'Profile',
-        ),
-      ],
-    );
-  }
 }
 
 // ---------------------------------------------------------------------------

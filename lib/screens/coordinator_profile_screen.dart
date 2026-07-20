@@ -8,7 +8,6 @@ class CoordinatorProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const ProfileScaffold(
-      bottomNavigationBar: ProfileBottomNavigationBar(),
       children: [
         ProfileHeader(
           name: 'Marcus Chen',

@@ -11,11 +11,9 @@ class ProfileScaffold extends StatelessWidget {
   const ProfileScaffold({
     super.key,
     required this.children,
-    this.bottomNavigationBar,
   });
 
   final List<Widget> children;
-  final Widget? bottomNavigationBar;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +58,6 @@ class ProfileScaffold extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: bottomNavigationBar,
     );
   }
 }
@@ -364,39 +361,6 @@ class ProfileLogoutButton extends StatelessWidget {
   }
 }
 
-class ProfileBottomNavigationBar extends StatelessWidget {
-  const ProfileBottomNavigationBar({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: 2,
-      height: 76,
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
-      indicatorColor: profileIconSurface,
-      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.dashboard_outlined),
-          selectedIcon: Icon(Icons.dashboard),
-          label: 'Dashboard',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.bar_chart_outlined),
-          selectedIcon: Icon(Icons.bar_chart),
-          label: 'Reports',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-      ],
-      onDestinationSelected: (_) {},
-    );
-  }
-}
 
 class ProfileTileGroup extends StatelessWidget {
   const ProfileTileGroup({super.key, required this.children});
@@ -475,7 +439,7 @@ class _ProfileTileBase extends StatelessWidget {
               ],
             ),
           ),
-          ?trailing,
+          if (trailing != null) trailing!,
         ],
       ),
     );

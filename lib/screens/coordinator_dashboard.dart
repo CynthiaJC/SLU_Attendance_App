@@ -1,17 +1,7 @@
 import 'package:flutter/material.dart';
-import 'coordinator_profile_screen.dart';
-import 'coordinator_screen_report.dart';
 
-class CoordinatorDashboard extends StatefulWidget {
+class CoordinatorDashboard extends StatelessWidget {
   const CoordinatorDashboard({super.key});
-
-  @override
-  State<CoordinatorDashboard> createState() => _CoordinatorDashboardState();
-}
-
-class _CoordinatorDashboardState extends State<CoordinatorDashboard> {
-
-  int selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -30,9 +20,7 @@ class _CoordinatorDashboardState extends State<CoordinatorDashboard> {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           actions: const [
-
             Padding(
               padding: EdgeInsets.only(right: 18),
               child: Icon(
@@ -40,81 +28,22 @@ class _CoordinatorDashboardState extends State<CoordinatorDashboard> {
                 color: Colors.black,
               ),
             )
-
           ],
-
           bottom: const TabBar(
             indicatorColor: Colors.blue,
             labelColor: Colors.blue,
             unselectedLabelColor: Colors.grey,
             tabs: [
-
-              Tab(
-                text: "General Meetings",
-              ),
-
-              Tab(
-                text: "Team Meetings",
-              ),
-
+              Tab(text: "General Meetings"),
+              Tab(text: "Team Meetings"),
             ],
           ),
         ),
 
         body: const TabBarView(
           children: [
-
             GeneralMeetingsTab(),
-
             TeamMeetingsTab(),
-
-          ],
-        ),
-
-        bottomNavigationBar: BottomNavigationBar(
-
-          currentIndex: selectedIndex,
-
-          onTap: (index) {
-
-            setState(() {
-              selectedIndex = index;
-            });
-
-            if (index == 1) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CoordinatorScreenReport()),
-              );
-            }
-            if (index == 2) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CoordinatorProfileScreen()),
-              );
-            }
-
-          },
-
-          selectedItemColor: Colors.blue,
-
-          items: const [
-
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard),
-              label: "Home",
-            ),
-
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart),
-              label: "Reports",
-            ),
-
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              label: "Profile",
-            ),
-
           ],
         ),
       ),

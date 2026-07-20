@@ -8,7 +8,6 @@ class InternProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const ProfileScaffold(
-      bottomNavigationBar: ProfileBottomNavigationBar(),
       children: [
         ProfileHeader(
           name: 'Amara Okafor',
