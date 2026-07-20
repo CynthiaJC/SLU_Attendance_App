@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'coordinator_login_screen.dart';
+import 'coordinator_profile_screen.dart';
 import 'intern_login_screen.dart';
+import 'intern_profile_screen.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -57,6 +59,38 @@ class RoleSelectionScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const InternLoginScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.manage_accounts_outlined),
+                  label: const Text('Coordinator Profile'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CoordinatorProfileScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.person_outline),
+                  label: const Text('Intern Profile'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const InternProfileScreen(),
                       ),
                     );
                   },
