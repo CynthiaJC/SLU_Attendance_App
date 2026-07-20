@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'coordinator_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,13 +13,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Placeholder test credentials — remove once real auth is connected
-  static const String _internTestEmail = 'intern@slu.com';
-  static const String _internTestPassword = 'intern123';
-  static const String _coordinatorTestEmail = 'coordinator@slu.com';
-  static const String _coordinatorTestPassword = 'coordinator123';
+  static const String _testEmail = 'user@slu.com';
+  static const String _testPassword = 'slu12345';
 
-  final _emailController = TextEditingController(text: _internTestEmail);
-  final _passwordController = TextEditingController(text: _internTestPassword);
+  final _emailController = TextEditingController(text: _testEmail);
+  final _passwordController = TextEditingController(text: _testPassword);
 
   int _selectedRoleIndex = 0; // 0 = Intern, 1 = Coordinator
   bool _isPasswordObscured = true;
@@ -38,13 +37,18 @@ class _LoginScreenState extends State<LoginScreen> {
       final password = _passwordController.text.trim();
 
       // TODO: replace with real backend authentication
-      final expectedEmail = _selectedRoleIndex == 0 ? _internTestEmail : _coordinatorTestEmail;
-      final expectedPassword = _selectedRoleIndex == 0 ? _internTestPassword : _coordinatorTestPassword;
-
-      if (email == expectedEmail && password == expectedPassword) {
+      if (email == _testEmail && password == _testPassword) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Logging in as $role...')),
         );
+
+        if (_selectedRoleIndex == 1) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const CoordinatorDashboard()),
+          );
+        }
+        // TODO: add InternDashboard navigation here once it exists
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid credentials. Use the pre-filled test login.')),
