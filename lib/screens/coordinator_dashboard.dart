@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'coordinator_screen_report.dart';
 
 class CoordinatorDashboard extends StatefulWidget {
   const CoordinatorDashboard({super.key});
@@ -78,6 +79,14 @@ class _CoordinatorDashboardState extends State<CoordinatorDashboard> {
             setState(() {
               selectedIndex = index;
             });
+
+            if (index == 1) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CoordinatorScreenReport()),
+              );
+            }
+            // TODO: add Profile screen navigation once it exists
 
           },
 
