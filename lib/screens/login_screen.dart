@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'intern_dashboard.dart'; // Make sure to import your InternDashboard file here
+import 'coordinator_main_screen.dart';
+import 'intern_main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +16,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   
+
+  // Placeholder test credentials — remove once real auth is connected
+  static const String _testEmail = 'user@slu.com';
+  static const String _testPassword = 'slu12345';
+
+  final _emailController = TextEditingController(text: _testEmail);
+  final _passwordController = TextEditingController(text: _testPassword);
+
   int _selectedRoleIndex = 0; // 0 = Intern, 1 = Coordinator
   bool _isPasswordObscured = true;
   bool _rememberMe = false;
@@ -37,7 +47,25 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(
             builder: (context) => const InternDashboard(),
           ),
+      final password = _passwordController.text.trim();
+
+      // TODO: replace with real backend authentication
+      if (email == _testEmail && password == _testPassword) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Logging in as $role...')),
         );
+
+        if (_selectedRoleIndex == 1) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const CoordinatorMainScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const InternMainScreen()),
+          );
+        }
       } else {
         // Show error snackbar for invalid credentials
         ScaffoldMessenger.of(context).showSnackBar(
@@ -185,6 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () {
                         // Handle Forgot Password routing contextually
                       },
+                      onPressed: () {},
                       child: Text('Forgot Password?', style: TextStyle(color: themeColor)),
                     ),
                   ],
@@ -264,4 +293,5 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
 }

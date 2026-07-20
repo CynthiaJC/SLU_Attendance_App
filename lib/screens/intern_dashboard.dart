@@ -250,7 +250,7 @@ class _InternDashboardState extends State<InternDashboard> {
         dense: true,
         leading: CircleAvatar(
           radius: 16,
-          backgroundColor: iconColor.withOpacity(0.1),
+          backgroundColor: iconColor.withValues(alpha: 0.1),
           child: Icon(icon, size: 16, color: iconColor),
         ),
         title: Text(action, style: const TextStyle(fontWeight: FontWeight.w600)),
