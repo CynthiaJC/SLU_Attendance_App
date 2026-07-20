@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'coordinator_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,13 +13,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Placeholder test credentials — remove once real auth is connected
-  static const String _internTestEmail = 'intern@slu.com';
-  static const String _internTestPassword = 'intern123';
-  static const String _coordinatorTestEmail = 'coordinator@slu.com';
-  static const String _coordinatorTestPassword = 'coordinator123';
+  static const String _testEmail = 'user@slu.com';
+  static const String _testPassword = 'slu12345';
 
-  final _emailController = TextEditingController(text: _internTestEmail);
-  final _passwordController = TextEditingController(text: _internTestPassword);
+  final _emailController = TextEditingController(text: _testEmail);
+  final _passwordController = TextEditingController(text: _testPassword);
 
   int _selectedRoleIndex = 0; // 0 = Intern, 1 = Coordinator
   bool _isPasswordObscured = true;
