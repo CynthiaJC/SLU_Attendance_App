@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'coordinator_profile_screen.dart';
+
 // ---------------------------------------------------------------------------
 // Data model
 // ---------------------------------------------------------------------------
@@ -628,7 +630,17 @@ class _CoordinatorScreenReportState extends State<CoordinatorScreenReport>
       surfaceTintColor: Colors.transparent,
       elevation: 4,
       selectedIndex: _bottomNavIndex,
-      onDestinationSelected: (i) => setState(() => _bottomNavIndex = i),
+      onDestinationSelected: (i) {
+        setState(() => _bottomNavIndex = i);
+        if (i == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CoordinatorProfileScreen(),
+            ),
+          );
+        }
+      },
       indicatorColor: _surfaceContainerHigh,
       destinations: const [
         NavigationDestination(
