@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'coordinator_profile_screen.dart';
+
 class CoordinatorLoginScreen extends StatefulWidget {
   const CoordinatorLoginScreen({super.key});
 
@@ -32,6 +34,10 @@ class _CoordinatorLoginScreenState extends State<CoordinatorLoginScreen> {
 
     // TODO: connect to backend authentication
     debugPrint('Coordinator login attempt: $email');
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CoordinatorProfileScreen()),
+    );
   }
 
   @override
@@ -70,9 +76,11 @@ class _CoordinatorLoginScreenState extends State<CoordinatorLoginScreen> {
                       labelText: 'Password',
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
                         onPressed: () {
                           setState(() {
                             _obscurePassword = !_obscurePassword;

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'intern_profile_screen.dart';
+
 class InternLoginScreen extends StatefulWidget {
   const InternLoginScreen({super.key});
 
@@ -32,6 +34,10 @@ class _InternLoginScreenState extends State<InternLoginScreen> {
 
     // TODO: connect to backend authentication
     debugPrint('Intern login attempt: $email');
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const InternProfileScreen()),
+    );
   }
 
   @override
@@ -70,9 +76,11 @@ class _InternLoginScreenState extends State<InternLoginScreen> {
                       labelText: 'Password',
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
                         onPressed: () {
                           setState(() {
                             _obscurePassword = !_obscurePassword;
