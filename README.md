@@ -115,6 +115,31 @@ Contributions are what make the open-source community such an amazing place to l
 
 ---
 
+## 📊 Mock Data & API Integration
+
+The app includes realistic sample data for **Interns**, **Meetings**, and **Attendance Records**.
+
+### 1. Sample JSON Files
+* **[assets/sample_data.json](file:///c:/Users/ADMIN/SLU_Attendance_App/assets/sample_data.json)** (configured in `pubspec.yaml`)
+* **[sample_data.json](file:///c:/Users/ADMIN/SLU_Attendance_App/sample_data.json)** (workspace root)
+
+### 2. Standalone Mock API Server
+A lightweight Python REST server is included to simulate backend APIs:
+```bash
+python mock_server.py
+```
+* `GET http://localhost:8080/api/summary`
+* `GET http://localhost:8080/api/interns?department=Engineering`
+* `GET http://localhost:8080/api/meetings?type=General`
+* `GET http://localhost:8080/api/attendance?internId=INT-001`
+* `POST http://localhost:8080/api/attendance`
+
+### 3. Flutter Service & Data Models
+* Models: `lib/models/attendance_models.dart` (`Intern`, `Meeting`, `AttendanceRecord`)
+* Service: `lib/services/mock_api_service.dart` (`MockApiService`)
+
+---
+
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
