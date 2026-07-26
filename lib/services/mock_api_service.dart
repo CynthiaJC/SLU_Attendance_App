@@ -10,6 +10,8 @@ class MockApiService {
   Map<String, dynamic>? _cache;
 
   Future<Map<String, dynamic>> _loadData() async {
+    // Simulate network delay so loading states and skeletons are visible
+    await Future.delayed(const Duration(milliseconds: 500));
     if (_cache != null) return _cache!;
     final String jsonString = await rootBundle.loadString('assets/sample_data.json');
     _cache = json.decode(jsonString) as Map<String, dynamic>;
@@ -99,6 +101,46 @@ class MockApiService {
     }
 
     return list;
+  }
+
+  /// Compute monthly attendance trend for a given intern.
+  /// Returns a list of up to 6 recent months with their attendance rate (0.0–1.0).
+  Future<List<({String month, double value})>> getMonthlyTrend(
+      String internId) async {
+    final records = await getAttendanceRecords(internId: internId);
+
+    // Group records by "YYYY-MM"
+    final Map<String, List<AttendanceRecord>> byMonth = {};
+    for (final r in records) {
+      // date format is "YYYY-MM-DD"
+      if (r.date.length >= 7) {
+        final key = r.date.substring(0, 7);
+        byMonth.putIfAbsent(key, () => []).add(r);
+      }
+    }
+
+    // Sort months ascending and take last 6
+    final sortedKeys = byMonth.keys.toList()..sort();
+    final recentKeys = sortedKeys.length > 6
+        ? sortedKeys.sublist(sortedKeys.length - 6)
+        : sortedKeys;
+
+    const monthAbbr = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+
+    return recentKeys.map((key) {
+      final monthNum = int.tryParse(key.substring(5, 7)) ?? 0;
+      final label = monthNum > 0 && monthNum < 13 ? monthAbbr[monthNum] : key;
+      final monthRecords = byMonth[key]!;
+      final presentCount =
+          monthRecords.where((r) => r.status == 'Present').length;
+      final rate = monthRecords.isEmpty
+          ? 0.0
+          : presentCount / monthRecords.length;
+      return (month: label, value: rate.clamp(0.0, 1.0));
+    }).toList();
   }
 
   /// Create a new check-in attendance record in memory

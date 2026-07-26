@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../models/attendance_models.dart';
+import '../services/mock_api_service.dart';
 
 // ---------------------------------------------------------------------------
-// Color palette (matches HTML inspo)
+// Color palette
 // ---------------------------------------------------------------------------
 
 const _primary = Color(0xFF004AC6);
@@ -18,94 +20,114 @@ const _errorContainer = Color(0xFFFFDAD6);
 const _onErrorContainer = Color(0xFF93000A);
 
 // ---------------------------------------------------------------------------
-// Data
+// Internal data holder
 // ---------------------------------------------------------------------------
 
-const _trendData = [
-  (month: 'Oct', value: 0.85),
-  (month: 'Nov', value: 0.90),
-  (month: 'Dec', value: 1.00),
-  (month: 'Jan', value: 0.80),
-  (month: 'Feb', value: 0.95),
-  (month: 'Mar', value: 0.92),
-];
+class _ReportData {
+  final Intern? intern;
+  final List<AttendanceRecord> exceptions; // Absent or Late records
+  final List<({String month, double value})> trendData;
 
-enum ExceptionType { absent, late }
-
-class _Exception {
-  final String session;
-  final String dateTime;
-  final ExceptionType type;
-  final String? detail; // e.g. "15m" for late
-
-  const _Exception({
-    required this.session,
-    required this.dateTime,
-    required this.type,
-    this.detail,
+  const _ReportData({
+    required this.intern,
+    required this.exceptions,
+    required this.trendData,
   });
 }
-
-const _exceptions = [
-  _Exception(
-    session: 'Team Sync',
-    dateTime: 'Jan 15, 2024 • 10:00 AM',
-    type: ExceptionType.absent,
-  ),
-  _Exception(
-    session: 'General Meeting',
-    dateTime: 'Jan 02, 2024 • 09:00 AM',
-    type: ExceptionType.late,
-    detail: '15m',
-  ),
-  _Exception(
-    session: 'Workshop: Leadership',
-    dateTime: 'Dec 20, 2023 • 02:00 PM',
-    type: ExceptionType.late,
-    detail: '8m',
-  ),
-];
 
 // ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
 
 class InternReportPage extends StatefulWidget {
-  const InternReportPage({super.key});
+  final String internId;
+  const InternReportPage({super.key, required this.internId});
 
   @override
   State<InternReportPage> createState() => _InternReportPageState();
 }
 
 class _InternReportPageState extends State<InternReportPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
+  // Chart/ring animation
   late AnimationController _animCtrl;
   late Animation<double> _anim;
-  int _bottomNavIndex = 1; // Reports active
+
+  // Shimmer pulse
+  late AnimationController _shimmerCtrl;
+  late Animation<double> _shimmerAnim;
+
+  late Future<_ReportData> _future;
+  bool _animCtrlInitialized = false;
 
   @override
   void initState() {
     super.initState();
+
     _animCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1200),
     );
     _anim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic);
-    _animCtrl.forward();
+    _animCtrlInitialized = true;
+
+    _shimmerCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _shimmerAnim = Tween<double>(begin: 0.3, end: 0.9).animate(
+      CurvedAnimation(parent: _shimmerCtrl, curve: Curves.easeInOut),
+    );
+
+    _future = _loadData();
   }
 
   @override
   void dispose() {
     _animCtrl.dispose();
+    _shimmerCtrl.dispose();
     super.dispose();
   }
+
+  Future<_ReportData> _loadData() async {
+    // Reset animation for re-loads (guard against call before init)
+    if (_animCtrlInitialized) _animCtrl.reset();
+
+    final api = MockApiService();
+    final intern = await api.getInternById(widget.internId);
+    final records = await api.getAttendanceRecords(internId: widget.internId);
+    final trend = await api.getMonthlyTrend(widget.internId);
+
+    final exceptions = records
+        .where((r) => r.status == 'Absent' || r.status == 'Late')
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date)); // most recent first
+
+    // Only animate if widget is still mounted
+    if (mounted) _animCtrl.forward();
+
+    return _ReportData(intern: intern, exceptions: exceptions, trendData: trend);
+  }
+
+  void _retry() => setState(() => _future = _loadData());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _surface,
       appBar: _buildAppBar(),
-      body: _buildBody(),
+      body: FutureBuilder<_ReportData>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return _buildSkeleton();
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return _buildError();
+          }
+          return _buildBody(snapshot.data!);
+        },
+      ),
     );
   }
 
@@ -156,15 +178,98 @@ class _InternReportPageState extends State<InternReportPage>
     );
   }
 
+  // ── Loading skeleton ───────────────────────────────────────────────────────
+
+  Widget _buildSkeleton() {
+    return AnimatedBuilder(
+      animation: _shimmerAnim,
+      builder: (context, _) {
+        final alpha = (_shimmerAnim.value * 255).round();
+        final shimmerColor = Color.fromARGB(alpha, 200, 210, 230);
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              _skeletonBox(width: double.infinity, height: 28, color: shimmerColor),
+              const SizedBox(height: 8),
+              _skeletonBox(width: 220, height: 16, color: shimmerColor),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(child: _skeletonBox(height: 130, color: shimmerColor)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _skeletonBox(height: 130, color: shimmerColor)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _skeletonBox(width: double.infinity, height: 200, color: shimmerColor),
+              const SizedBox(height: 16),
+              _skeletonBox(width: double.infinity, height: 180, color: shimmerColor),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _skeletonBox({double? width, required double height, required Color color}) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
+    );
+  }
+
+  // ── Error state ────────────────────────────────────────────────────────────
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off_outlined, size: 64, color: _onSurfaceVariant),
+            const SizedBox(height: 16),
+            const Text(
+              'Could not load report',
+              style: TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.w600, color: _onSurface),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'There was a problem fetching your data.\nPlease try again.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: _onSurfaceVariant, fontSize: 14),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _retry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ── Body ──────────────────────────────────────────────────────────────────
 
-  Widget _buildBody() {
+  Widget _buildBody(_ReportData data) {
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(child: _buildPageTitle()),
-        SliverToBoxAdapter(child: _buildSummaryCards()),
-        SliverToBoxAdapter(child: _buildTrendChart()),
-        SliverToBoxAdapter(child: _buildExceptionsList()),
+        SliverToBoxAdapter(child: _buildSummaryCards(data)),
+        SliverToBoxAdapter(child: _buildTrendChart(data)),
+        SliverToBoxAdapter(child: _buildExceptionsList(data)),
         const SliverToBoxAdapter(child: SizedBox(height: 24)),
       ],
     );
@@ -199,20 +304,33 @@ class _InternReportPageState extends State<InternReportPage>
 
   // ── Summary stat cards ────────────────────────────────────────────────────
 
-  Widget _buildSummaryCards() {
+  Widget _buildSummaryCards(_ReportData data) {
+    final intern = data.intern;
+    final rate = intern?.participationRate ?? 0.0;
+    final ratePercent = (rate * 100).round();
+    final present = intern?.presentCount ?? 0;
+    final total = intern?.totalSessions ?? 0;
+    final lastMonthDiff = _computeLastMonthDiff(data.trendData);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Row(
         children: [
-          Expanded(child: _buildAttendanceCard()),
+          Expanded(child: _buildAttendanceCard(rate, ratePercent, lastMonthDiff)),
           const SizedBox(width: 12),
-          Expanded(child: _buildSessionsCard()),
+          Expanded(child: _buildSessionsCard(present, total)),
         ],
       ),
     );
   }
 
-  Widget _buildAttendanceCard() {
+  /// Returns the percentage-point delta vs the previous month, or null if unavailable.
+  double? _computeLastMonthDiff(List<({String month, double value})> trend) {
+    if (trend.length < 2) return null;
+    return (trend.last.value - trend[trend.length - 2].value) * 100;
+  }
+
+  Widget _buildAttendanceCard(double rate, int ratePercent, double? lastMonthDiff) {
     return _CardShell(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,11 +361,11 @@ class _InternReportPageState extends State<InternReportPage>
                     width: 72,
                     height: 72,
                     child: CustomPaint(
-                      painter: _RingPainter(progress: 0.92 * _anim.value),
+                      painter: _RingPainter(progress: rate * _anim.value),
                     ),
                   ),
                   Text(
-                    '${(92 * _anim.value).round()}%',
+                    '${(ratePercent * _anim.value).round()}%',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -259,20 +377,28 @@ class _InternReportPageState extends State<InternReportPage>
             },
           ),
           const SizedBox(height: 8),
-          const Text(
-            '+2% from last month',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: _primary,
+          if (lastMonthDiff != null)
+            Text(
+              lastMonthDiff >= 0
+                  ? '+${lastMonthDiff.abs().toStringAsFixed(0)}% from last month'
+                  : '-${lastMonthDiff.abs().toStringAsFixed(0)}% from last month',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: lastMonthDiff >= 0 ? _primary : const Color(0xFF991B1B),
+              ),
+            )
+          else
+            const Text(
+              'No prior month data',
+              style: TextStyle(fontSize: 11, color: _onSurfaceVariant),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildSessionsCard() {
+  Widget _buildSessionsCard(int present, int total) {
     return _CardShell(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,7 +425,7 @@ class _InternReportPageState extends State<InternReportPage>
             animation: _anim,
             builder: (context, _) {
               return Text(
-                '${(45 * _anim.value).round()}',
+                '${(present * _anim.value).round()}',
                 style: const TextStyle(
                   fontSize: 38,
                   fontWeight: FontWeight.w700,
@@ -312,18 +438,18 @@ class _InternReportPageState extends State<InternReportPage>
           ),
           const SizedBox(height: 8),
           const Text(
-            'This Quarter',
+            'Sessions Attended',
             style: TextStyle(fontSize: 12, color: _onSurfaceVariant),
           ),
           const SizedBox(height: 8),
-          // Mini progress bar: 45/52 sessions completed
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: AnimatedBuilder(
               animation: _anim,
               builder: (context, _) {
+                final progress = total > 0 ? (present / total) * _anim.value : 0.0;
                 return LinearProgressIndicator(
-                  value: (45 / 52) * _anim.value,
+                  value: progress,
                   minHeight: 6,
                   backgroundColor: _surfaceContainerHigh,
                   valueColor: const AlwaysStoppedAnimation<Color>(_primary),
@@ -332,9 +458,9 @@ class _InternReportPageState extends State<InternReportPage>
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            '45 of 52 sessions',
-            style: TextStyle(fontSize: 10, color: _onSurfaceVariant),
+          Text(
+            '$present of $total sessions',
+            style: const TextStyle(fontSize: 10, color: _onSurfaceVariant),
           ),
         ],
       ),
@@ -343,7 +469,9 @@ class _InternReportPageState extends State<InternReportPage>
 
   // ── Monthly trend bar chart ────────────────────────────────────────────────
 
-  Widget _buildTrendChart() {
+  Widget _buildTrendChart(_ReportData data) {
+    final trend = data.trendData;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: _CardShell(
@@ -362,14 +490,17 @@ class _InternReportPageState extends State<InternReportPage>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: _surfaceContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
-                    'Last 6 Months',
-                    style: TextStyle(
+                  child: Text(
+                    trend.isEmpty
+                        ? 'No data'
+                        : 'Last ${trend.length} Month${trend.length != 1 ? 's' : ''}',
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: _onSurfaceVariant,
@@ -379,91 +510,102 @@ class _InternReportPageState extends State<InternReportPage>
               ],
             ),
             const SizedBox(height: 20),
-            AnimatedBuilder(
-              animation: _anim,
-              builder: (context, _) {
-                return SizedBox(
-                  height: 120,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: _trendData.map((entry) {
-                      final h = entry.value * _anim.value;
-                      return Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Opacity(
-                                opacity: _anim.value,
-                                child: Text(
-                                  '${(entry.value * 100).round()}%',
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600,
-                                    color: _primary,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              // Background track
-                              Stack(
-                                alignment: Alignment.bottomCenter,
-                                children: [
-                                  Container(
-                                    height: 90,
-                                    decoration: BoxDecoration(
-                                      color: _surfaceContainerHigh,
-                                      borderRadius: const BorderRadius.vertical(
-                                          top: Radius.circular(5)),
+            if (trend.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Text(
+                    'No monthly data available yet.',
+                    style: TextStyle(color: _onSurfaceVariant, fontSize: 14),
+                  ),
+                ),
+              )
+            else ...[
+              AnimatedBuilder(
+                animation: _anim,
+                builder: (context, _) {
+                  return SizedBox(
+                    height: 120,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: trend.map((entry) {
+                        final h = entry.value * _anim.value;
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Opacity(
+                                  opacity: _anim.value,
+                                  child: Text(
+                                    '${(entry.value * 100).round()}%',
+                                    style: const TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                      color: _primary,
                                     ),
                                   ),
-                                  ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(
-                                        top: Radius.circular(5)),
-                                    child: Container(
-                                      height: 90 * h,
-                                      decoration: const BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Color(0xFF2563EB),
-                                            Color(0xFF004AC6),
-                                          ],
+                                ),
+                                const SizedBox(height: 3),
+                                Stack(
+                                  alignment: Alignment.bottomCenter,
+                                  children: [
+                                    Container(
+                                      height: 90,
+                                      decoration: BoxDecoration(
+                                        color: _surfaceContainerHigh,
+                                        borderRadius: const BorderRadius.vertical(
+                                            top: Radius.circular(5)),
+                                      ),
+                                    ),
+                                    ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(5)),
+                                      child: Container(
+                                        height: 90 * h,
+                                        decoration: const BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [
+                                              Color(0xFF2563EB),
+                                              Color(0xFF004AC6),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: trend
+                    .map(
+                      (e) => Expanded(
+                        child: Text(
+                          e.month,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: _onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: _trendData
-                  .map(
-                    (e) => Expanded(
-                      child: Text(
-                        e.month,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: _onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
                       ),
-                    ),
-                  )
-                  .toList(),
-            ),
+                    )
+                    .toList(),
+              ),
+            ],
           ],
         ),
       ),
@@ -472,7 +614,9 @@ class _InternReportPageState extends State<InternReportPage>
 
   // ── Recent Exceptions list ─────────────────────────────────────────────────
 
-  Widget _buildExceptionsList() {
+  Widget _buildExceptionsList(_ReportData data) {
+    final exceptions = data.exceptions;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Container(
@@ -495,7 +639,8 @@ class _InternReportPageState extends State<InternReportPage>
             Container(
               color: _surfaceContainer,
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: const Text(
                 'Recent Exceptions',
                 style: TextStyle(
@@ -505,24 +650,23 @@ class _InternReportPageState extends State<InternReportPage>
                 ),
               ),
             ),
-            if (_exceptions.isEmpty)
+            if (exceptions.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(24),
                 child: Center(
                   child: Text(
-                    'No exceptions — great attendance!',
+                    'No exceptions — great attendance! 🎉',
                     style: TextStyle(color: _onSurfaceVariant, fontSize: 14),
                   ),
                 ),
               )
             else
-              ..._exceptions.map((ex) => _ExceptionTile(exception: ex)),
+              ...exceptions.map((r) => _ExceptionTile(record: r)),
           ],
         ),
       ),
     );
   }
-
 }
 
 // ---------------------------------------------------------------------------
@@ -598,25 +742,48 @@ class _RingPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// Exception tile
+// Exception tile (from real AttendanceRecord)
 // ---------------------------------------------------------------------------
 
 class _ExceptionTile extends StatelessWidget {
-  final _Exception exception;
-  const _ExceptionTile({required this.exception});
+  final AttendanceRecord record;
+  const _ExceptionTile({required this.record});
 
-  bool get _isAbsent => exception.type == ExceptionType.absent;
+  bool get _isAbsent => record.status == 'Absent';
 
   Color get _iconBg => _isAbsent ? _errorContainer : const Color(0xFFFEF9C3);
-  Color get _iconFg => _isAbsent ? _onErrorContainer : const Color(0xFF854D0E);
-  Color get _badgeBg => _isAbsent ? const Color(0xFFFEE2E2) : const Color(0xFFFEF9C3);
-  Color get _badgeFg => _isAbsent ? const Color(0xFF991B1B) : const Color(0xFF854D0E);
-  IconData get _icon => _isAbsent ? Icons.event_busy_outlined : Icons.schedule_outlined;
-  String get _label =>
-      _isAbsent ? 'Absent' : 'Late (${exception.detail ?? ''})';
+  Color get _iconFg =>
+      _isAbsent ? _onErrorContainer : const Color(0xFF854D0E);
+  Color get _badgeBg =>
+      _isAbsent ? const Color(0xFFFEE2E2) : const Color(0xFFFEF9C3);
+  Color get _badgeFg =>
+      _isAbsent ? const Color(0xFF991B1B) : const Color(0xFF854D0E);
+  IconData get _icon =>
+      _isAbsent ? Icons.event_busy_outlined : Icons.schedule_outlined;
+  String get _label => _isAbsent ? 'Absent' : 'Late';
+
+  String _formatDate(String raw) {
+    try {
+      final parts = raw.split('-');
+      if (parts.length == 3) {
+        const months = [
+          '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        ];
+        final m = int.parse(parts[1]);
+        return '${months[m]} ${parts[2]}, ${parts[0]}';
+      }
+    } catch (_) {}
+    return raw;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final timeDisplay =
+        record.timeIn.isNotEmpty && record.timeIn != 'N/A'
+            ? record.timeIn
+            : '--:--';
+
     return Container(
       decoration: const BoxDecoration(
         border: Border(
@@ -627,7 +794,8 @@ class _ExceptionTile extends StatelessWidget {
         onTap: () {},
         splashColor: _surfaceContainerLow,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
               // Icon circle
@@ -647,7 +815,9 @@ class _ExceptionTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      exception.session,
+                      record.meetingTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -656,7 +826,7 @@ class _ExceptionTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      exception.dateTime,
+                      '${_formatDate(record.date)}  •  $timeDisplay',
                       style: const TextStyle(
                         fontSize: 12,
                         color: _onSurfaceVariant,
@@ -667,7 +837,8 @@ class _ExceptionTile extends StatelessWidget {
               ),
               // Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: _badgeBg,
                   borderRadius: BorderRadius.circular(8),
