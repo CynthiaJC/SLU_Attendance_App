@@ -33,9 +33,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      final role = _selectedRoleIndex == 0 ? 'Intern' : 'Coordinator';
       final email = _emailController.text.trim();
-      final password = _passwordController.text.trim();
+      final password = _passwordController.text;
+      final isIntern = _selectedRoleIndex == 0;
 
       // TODO: replace with real backend authentication
       if (email == _testEmail && password == _testPassword) {

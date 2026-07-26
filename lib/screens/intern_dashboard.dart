@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'feedback_screen.dart';
 
 class InternDashboard extends StatefulWidget {
   const InternDashboard({super.key});
@@ -136,6 +137,11 @@ class _InternDashboardState extends State<InternDashboard> {
                 ),
               ),
               const SizedBox(height: 20),
+<<<<<<< HEAD
+              _buildFeedbackButton(context),
+              const SizedBox(height: 20),
+=======
+>>>>>>> 8a5c5fb69ee51272677bae86613cd752a31a06b1
 
               // 3. Quick Stats Grid
               Row(
@@ -258,4 +264,34 @@ class _InternDashboardState extends State<InternDashboard> {
       ),
     );
   }
+<<<<<<< HEAD
+  Widget _buildFeedbackButton(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(vertical: 12),
+      child: ElevatedButton.icon(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FeedbackScreen(),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        icon: const Icon(Icons.feedback_outlined),
+        label: const Text(
+          'Submit Feedback',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+=======
+>>>>>>> 8a5c5fb69ee51272677bae86613cd752a31a06b1
 }
