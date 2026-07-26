@@ -4,7 +4,8 @@ import 'intern_report_page.dart';
 import 'intern_profile_screen.dart';
 
 class InternMainScreen extends StatefulWidget {
-  const InternMainScreen({super.key});
+  final String internId;
+  const InternMainScreen({super.key, required this.internId});
 
   @override
   State<InternMainScreen> createState() => _InternMainScreenState();
@@ -13,18 +14,18 @@ class InternMainScreen extends StatefulWidget {
 class _InternMainScreenState extends State<InternMainScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    InternDashboard(),
-    InternReportPage(),
-    InternProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final screens = [
+      InternDashboard(internId: widget.internId),
+      InternReportPage(internId: widget.internId),
+      InternProfileScreen(internId: widget.internId),
+    ];
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: screens,
       ),
       bottomNavigationBar: NavigationBar(
         backgroundColor: Colors.white,
@@ -36,7 +37,7 @@ class _InternMainScreenState extends State<InternMainScreen> {
             _currentIndex = index;
           });
         },
-        indicatorColor: const Color(0xFFE1E8FD), // matches _surfaceContainerHigh in report
+        indicatorColor: const Color(0xFFE1E8FD),
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),

@@ -35,12 +35,12 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
-      final isIntern = _selectedRoleIndex == 0;
 
       // TODO: replace with real backend authentication
       if (email == _testEmail && password == _testPassword) {
+        final roleLabel = _selectedRoleIndex == 0 ? 'Intern' : 'Coordinator';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Logging in as $role...')),
+          SnackBar(content: Text('Logging in as $roleLabel...')),
         );
 
         if (_selectedRoleIndex == 1) {
@@ -49,9 +49,12 @@ class _LoginScreenState extends State<LoginScreen> {
             MaterialPageRoute(builder: (context) => const CoordinatorMainScreen()),
           );
         } else {
+          // TODO: resolve real internId from authenticated user record
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const InternMainScreen()),
+            MaterialPageRoute(
+              builder: (context) => const InternMainScreen(internId: 'INT-001'),
+            ),
           );
         }
       } else {
