@@ -137,8 +137,11 @@ class _InternDashboardState extends State<InternDashboard> {
                 ),
               ),
               const SizedBox(height: 20),
+<<<<<<< HEAD
               _buildFeedbackButton(context),
               const SizedBox(height: 20),
+=======
+>>>>>>> 8a5c5fb69ee51272677bae86613cd752a31a06b1
 
               // 3. Quick Stats Grid
               Row(
@@ -261,6 +264,7 @@ class _InternDashboardState extends State<InternDashboard> {
       ),
     );
   }
+<<<<<<< HEAD
   Widget _buildFeedbackButton(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -288,4 +292,6 @@ class _InternDashboardState extends State<InternDashboard> {
       ),
     );
   }
+=======
+>>>>>>> 8a5c5fb69ee51272677bae86613cd752a31a06b1
 }

@@ -46,10 +46,14 @@ class _LoginScreenState extends State<LoginScreen> {
         if (_selectedRoleIndex == 1) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const CoordinatorDashboard()),
+            MaterialPageRoute(builder: (context) => const CoordinatorMainScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const InternMainScreen()),
           );
         }
-        // TODO: add InternDashboard navigation here once it exists
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid credentials. Use the pre-filled test login.')),
