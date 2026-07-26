@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'coordinator_dashboard.dart';
+import 'coordinator_main_screen.dart';
+import 'intern_main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -36,26 +37,19 @@ class _LoginScreenState extends State<LoginScreen> {
       final password = _passwordController.text;
       final isIntern = _selectedRoleIndex == 0;
 
-      // Define our placeholder credentials
-      const internEmail = 'intern@team.com';
-      const internPassword = 'password123';
+      // TODO: replace with real backend authentication
+      if (email == _testEmail && password == _testPassword) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Logging in as $role...')),
+        );
 
-      const coordinatorEmail = 'coordinator@team.com';
-      const coordinatorPassword = 'admin123';
-
-      if (isIntern) {
-        // Check Intern Credentials
-        if (email == internEmail && password == internPassword) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login Successful! Welcome Intern.'),
-              backgroundColor: Colors.green,
-            ),
+        if (_selectedRoleIndex == 1) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const CoordinatorDashboard()),
           );
-          // TODO: Navigate to Intern Dashboard screen here
-        } else {
-          _showErrorSnackBar('Invalid Intern credentials! Try intern@team.com / password123');
         }
+        // TODO: add InternDashboard navigation here once it exists
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid credentials. Use the pre-filled test login.')),
@@ -63,3 +57,199 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final themeColor = _selectedRoleIndex == 0 ? Colors.indigo : Colors.teal;
+
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 40),
+                Icon(Icons.g_translate_outlined, size: 64, color: themeColor),
+                const SizedBox(height: 16),
+                Text(
+                  'Global Intern Tracker',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Manage and track seamlessly across borders.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 40),
+                CupertinoSlidingSegmentedControl<int>(
+                  groupValue: _selectedRoleIndex,
+                  backgroundColor: Colors.grey.shade200,
+                  thumbColor: themeColor,
+                  children: {
+                    0: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        'Intern Portal',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: _selectedRoleIndex == 0 ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ),
+                    1: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        'Coordinator',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: _selectedRoleIndex == 1 ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  },
+                  onValueChanged: (value) {
+                    setState(() {
+                      _selectedRoleIndex = value ?? 0;
+                    });
+                  },
+                ),
+                const SizedBox(height: 32),
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'Work Email',
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      return 'Please enter a valid email address';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _isPasswordObscured,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordObscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      ),
+                      onPressed: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
+                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters long';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          activeColor: themeColor,
+                          onChanged: (value) => setState(() => _rememberMe = value ?? false),
+                        ),
+                        const Text('Remember Me'),
+                      ],
+                    ),
+                    TextButton(
+                      onPressed: () {},
+                      child: Text('Forgot Password?', style: TextStyle(color: themeColor)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _handleLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: themeColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    _selectedRoleIndex == 0 ? 'Sign In as Intern' : 'Sign In as Coordinator',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                const Row(
+                  children: [
+                    Expanded(child: Divider()),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text('or continue with', style: TextStyle(color: Colors.grey)),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.g_mobiledata, size: 28),
+                        label: const Text('Google'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.work_outline, size: 20),
+                        label: const Text('LinkedIn'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 40),
+                TextButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.language, size: 20, color: Colors.grey),
+                  label: const Text('English (US)', style: TextStyle(color: Colors.grey)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
