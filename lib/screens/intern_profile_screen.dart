@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/attendance_models.dart';
 import '../services/mock_api_service.dart';
 import '../widgets/profile_widgets.dart';
+import 'login_screen.dart';
 
 class InternProfileScreen extends StatefulWidget {
   final String internId;
@@ -260,7 +261,14 @@ class _InternProfileScreenState extends State<InternProfileScreen>
         ),
         const SizedBox(height: 34),
 
-        const ProfileLogoutButton(),
+        ProfileLogoutButton(
+          onPressed: () {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+              (route) => false,
+            );
+          },
+        ),
         const SizedBox(height: 18),
         const Center(
           child: Text(
