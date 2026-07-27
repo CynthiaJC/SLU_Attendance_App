@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/attendance_models.dart';
+import '../services/mock_api_service.dart';
 
 class CoordinatorDashboard extends StatelessWidget {
   const CoordinatorDashboard({super.key});
@@ -51,204 +53,213 @@ class CoordinatorDashboard extends StatelessWidget {
   }
 }
 
-class GeneralMeetingsTab extends StatelessWidget {
+class GeneralMeetingsTab extends StatefulWidget {
   const GeneralMeetingsTab({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<GeneralMeetingsTab> createState() => _GeneralMeetingsTabState();
+}
 
-    return SingleChildScrollView(
+class _GeneralMeetingsTabState extends State<GeneralMeetingsTab> {
+  final MockApiService _apiService = MockApiService();
 
-      padding: const EdgeInsets.all(16),
+  late Future<List<Intern>> _internsFuture;
+  String _selectedDepartment = "All";
+  String _selectedStatusFilter = "All";
+  String _searchQuery = "";
 
-      child: Column(
-
-        children: [
-
-          Row(
-
-            children: const [
-
-              Expanded(
-                child: StatCard(
-                  title: "Interns",
-                  value: "150",
-                  icon: Icons.groups,
-                  iconColor: Colors.blue,
-                ),
-              ),
-
-              SizedBox(width: 10),
-
-              Expanded(
-                child: StatCard(
-                  title: "Present",
-                  value: "141",
-                  icon: Icons.check_circle,
-                  iconColor: Colors.green,
-                ),
-              ),
-
-              SizedBox(width: 10),
-
-              Expanded(
-                child: StatCard(
-                  title: "Absent",
-                  value: "9",
-                  icon: Icons.cancel,
-                  iconColor: Colors.red,
-                ),
-              ),
-
-            ],
-
-          ),
-
-          const SizedBox(height: 25),
-
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              "Intern Roll-call",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          TextField(
-            decoration: InputDecoration(
-              hintText: "Search interns...",
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          Row(
-
-            children: [
-
-              Expanded(
-                child: DropdownButtonFormField<String>(
-
-                  decoration: const InputDecoration(
-                    labelText: "Department",
-                    border: OutlineInputBorder(),
-                  ),
-
-                  items: const [
-
-                    DropdownMenuItem(
-                      value: "All",
-                      child: Text("All"),
-                    ),
-
-                    DropdownMenuItem(
-                      value: "Internship",
-                      child: Text("Internship"),
-                    ),
-
-                    DropdownMenuItem(
-                      value: "Course",
-                      child: Text("Course"),
-                    ),
-
-                  ],
-
-                  onChanged: (value) {},
-
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              Expanded(
-                child: DropdownButtonFormField<String>(
-
-                  decoration: const InputDecoration(
-                    labelText: "Status",
-                    border: OutlineInputBorder(),
-                  ),
-
-                  items: const [
-
-                    DropdownMenuItem(
-                      value: "All",
-                      child: Text("All"),
-                    ),
-
-                    DropdownMenuItem(
-                      value: "Present",
-                      child: Text("Present"),
-                    ),
-
-                    DropdownMenuItem(
-                      value: "Absent",
-                      child: Text("Absent"),
-                    ),
-
-                  ],
-
-                  onChanged: (value) {},
-
-                ),
-              ),
-
-            ],
-
-          ),
-
-          const SizedBox(height: 20),
-
-          const InternTile(
-            name: "Sarah Jenkins",
-            department: "Internship",
-            present: true,
-          ),
-
-          const InternTile(
-            name: "Ali Khan",
-            department: "Course",
-            present: false,
-          ),
-
-          const InternTile(
-            name: "Emma Wilson",
-            department: "Internship",
-            present: true,
-          ),
-
-          const InternTile(
-            name: "John David",
-            department: "Internship",
-            present: true,
-          ),
-
-          const InternTile(
-            name: "Fatima Noor",
-            department: "Course",
-            present: false,
-          ),
-
-        ],
-
-      ),
-
-    );
-
+  @override
+  void initState() {
+    super.initState();
+    _internsFuture = _apiService.getInterns();
   }
 
+  void _reload() {
+    setState(() {
+      _internsFuture = _apiService.getInterns(
+        department: _selectedDepartment,
+        search: _searchQuery,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Intern>>(
+      future: _internsFuture,
+      builder: (context, snapshot) {
+        // Loading state
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        // Error state
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                const SizedBox(height: 12),
+                const Text(
+                  "Failed to load intern data",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: _reload,
+                  child: const Text("Retry"),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final interns = snapshot.data ?? [];
+        final total = interns.length;
+        final present = interns.where((i) => i.status.toLowerCase() == 'ontrack' || i.status.toLowerCase() == 'present').length;
+        final absent = total - present;
+
+        // Apply status filter locally (Present/Absent toggle) since API filters on department/search only
+        var displayedInterns = interns;
+        if (_selectedStatusFilter == "Present") {
+          displayedInterns = interns.where((i) => i.presentCount > i.absentCount).toList();
+        } else if (_selectedStatusFilter == "Absent") {
+          displayedInterns = interns.where((i) => i.absentCount >= i.presentCount).toList();
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: StatCard(
+                      title: "Interns",
+                      value: "$total",
+                      icon: Icons.groups,
+                      iconColor: Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: StatCard(
+                      title: "Present",
+                      value: "$present",
+                      icon: Icons.check_circle,
+                      iconColor: Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: StatCard(
+                      title: "Absent",
+                      value: "$absent",
+                      icon: Icons.cancel,
+                      iconColor: Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 25),
+
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Intern Roll-call",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              TextField(
+                onChanged: (value) {
+                  _searchQuery = value;
+                  _reload();
+                },
+                decoration: InputDecoration(
+                  hintText: "Search interns...",
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _selectedDepartment,
+                      decoration: const InputDecoration(
+                        labelText: "Department",
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: "All", child: Text("All")),
+                        DropdownMenuItem(value: "Engineering", child: Text("Engineering")),
+                        DropdownMenuItem(value: "Design", child: Text("Design")),
+                        DropdownMenuItem(value: "Marketing", child: Text("Marketing")),
+                      ],
+                      onChanged: (value) {
+                        _selectedDepartment = value ?? "All";
+                        _reload();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _selectedStatusFilter,
+                      decoration: const InputDecoration(
+                        labelText: "Status",
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: "All", child: Text("All")),
+                        DropdownMenuItem(value: "Present", child: Text("Present")),
+                        DropdownMenuItem(value: "Absent", child: Text("Absent")),
+                      ],
+                      onChanged: (value) {
+                        setState(() => _selectedStatusFilter = value ?? "All");
+                      },
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              if (displayedInterns.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Text("No interns found."),
+                )
+              else
+                ...displayedInterns.map((intern) => InternTile(
+                      name: intern.name,
+                      department: intern.department,
+                      present: intern.presentCount > intern.absentCount,
+                    )),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
+
 class TeamMeetingsTab extends StatelessWidget {
   const TeamMeetingsTab({super.key});
 
@@ -258,10 +269,8 @@ class TeamMeetingsTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-
           Row(
             children: const [
-
               Expanded(
                 child: StatCard(
                   title: "Teams",
@@ -270,9 +279,7 @@ class TeamMeetingsTab extends StatelessWidget {
                   iconColor: Colors.indigo,
                 ),
               ),
-
               SizedBox(width: 10),
-
               Expanded(
                 child: StatCard(
                   title: "Avg Sync",
@@ -281,9 +288,7 @@ class TeamMeetingsTab extends StatelessWidget {
                   iconColor: Colors.green,
                 ),
               ),
-
               SizedBox(width: 10),
-
               Expanded(
                 child: StatCard(
                   title: "Meetings",
@@ -292,7 +297,6 @@ class TeamMeetingsTab extends StatelessWidget {
                   iconColor: Colors.orange,
                 ),
               ),
-
             ],
           ),
 
@@ -326,110 +330,21 @@ class TeamMeetingsTab extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          _teamCard(
-            "Team 1",
-            "10 / 10 Present",
-            "100%",
-            Colors.green,
-          ),
-
-          _teamCard(
-            "Team 2",
-            "9 / 10 Present",
-            "90%",
-            Colors.green,
-          ),
-
-          _teamCard(
-            "Team 3",
-            "10 / 10 Present",
-            "100%",
-            Colors.green,
-          ),
-
-          _teamCard(
-            "Team 4",
-            "8 / 10 Present",
-            "80%",
-            Colors.orange,
-          ),
-
-          _teamCard(
-            "Team 5",
-            "9 / 10 Present",
-            "90%",
-            Colors.green,
-          ),
-
-          _teamCard(
-            "Team 6",
-            "10 / 10 Present",
-            "100%",
-            Colors.green,
-          ),
-
-          _teamCard(
-            "Team 7",
-            "9 / 10 Present",
-            "90%",
-            Colors.green,
-          ),
-
-          _teamCard(
-            "Team 8",
-            "10 / 10 Present",
-            "100%",
-            Colors.green,
-          ),
-
-          _teamCard(
-            "Team 9",
-            "8 / 10 Present",
-            "80%",
-            Colors.orange,
-          ),
-
-          _teamCard(
-            "Team 10",
-            "9 / 10 Present",
-            "90%",
-            Colors.green,
-          ),
-
-          _teamCard(
-            "Team 11",
-            "10 / 10 Present",
-            "100%",
-            Colors.green,
-          ),
-
-          _teamCard(
-            "Team 12",
-            "9 / 10 Present",
-            "90%",
-            Colors.green,
-          ),
-
-          _teamCard(
-            "Team 13",
-            "10 / 10 Present",
-            "100%",
-            Colors.green,
-          ),
-
-          _teamCard(
-            "Team 14",
-            "8 / 10 Present",
-            "80%",
-            Colors.orange,
-          ),
-
-          _teamCard(
-            "Team 15",
-            "10 / 10 Present",
-            "100%",
-            Colors.green,
-          ),
+          _teamCard("Team 1", "10 / 10 Present", "100%", Colors.green),
+          _teamCard("Team 2", "9 / 10 Present", "90%", Colors.green),
+          _teamCard("Team 3", "10 / 10 Present", "100%", Colors.green),
+          _teamCard("Team 4", "8 / 10 Present", "80%", Colors.orange),
+          _teamCard("Team 5", "9 / 10 Present", "90%", Colors.green),
+          _teamCard("Team 6", "10 / 10 Present", "100%", Colors.green),
+          _teamCard("Team 7", "9 / 10 Present", "90%", Colors.green),
+          _teamCard("Team 8", "10 / 10 Present", "100%", Colors.green),
+          _teamCard("Team 9", "8 / 10 Present", "80%", Colors.orange),
+          _teamCard("Team 10", "9 / 10 Present", "90%", Colors.green),
+          _teamCard("Team 11", "10 / 10 Present", "100%", Colors.green),
+          _teamCard("Team 12", "9 / 10 Present", "90%", Colors.green),
+          _teamCard("Team 13", "10 / 10 Present", "100%", Colors.green),
+          _teamCard("Team 14", "8 / 10 Present", "80%", Colors.orange),
+          _teamCard("Team 15", "10 / 10 Present", "100%", Colors.green),
         ],
       ),
     );
@@ -455,16 +370,13 @@ class TeamMeetingsTab extends StatelessWidget {
             color: Colors.blue,
           ),
         ),
-
         title: Text(
           team,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
         ),
-
         subtitle: Text(attendance),
-
         trailing: Container(
           padding: const EdgeInsets.symmetric(
             horizontal: 14,
@@ -486,6 +398,7 @@ class TeamMeetingsTab extends StatelessWidget {
     );
   }
 }
+
 class StatCard extends StatelessWidget {
   final String title;
   final String value;
@@ -524,9 +437,7 @@ class StatCard extends StatelessWidget {
                 size: 18,
               ),
             ),
-
             const SizedBox(height: 10),
-
             Text(
               value,
               style: const TextStyle(
@@ -534,9 +445,7 @@ class StatCard extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 4),
-
             Text(
               title,
               textAlign: TextAlign.center,
@@ -582,7 +491,6 @@ class InternTile extends StatelessWidget {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
-
         leading: CircleAvatar(
           radius: 24,
           backgroundColor: Colors.blue.shade100,
@@ -594,7 +502,6 @@ class InternTile extends StatelessWidget {
             ),
           ),
         ),
-
         title: Text(
           name,
           style: const TextStyle(
@@ -602,7 +509,6 @@ class InternTile extends StatelessWidget {
             fontSize: 16,
           ),
         ),
-
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -617,10 +523,7 @@ class InternTile extends StatelessWidget {
             ),
           ],
         ),
-
-        trailing: StatusChip(
-          present: present,
-        ),
+        trailing: StatusChip(present: present),
       ),
     );
   }
